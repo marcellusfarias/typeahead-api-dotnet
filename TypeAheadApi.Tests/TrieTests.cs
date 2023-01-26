@@ -232,7 +232,7 @@ public class Tests
     }
 
     [Test]
-    public void TInitializeValidFileContent()
+    public void T_Initialize_ValidFileContent()
     {
         string fileContent = "{\"A-b\": 23, \"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
         Trie trie = new Trie(10);
@@ -250,7 +250,7 @@ public class Tests
     }
 
     [Test]
-    public void TInitializeInvalidFileContent()
+    public void T_Initialize_InvalidFileContent()
     {
         string fileContent = string.Empty;
         Trie trie = new Trie(10);
@@ -259,7 +259,7 @@ public class Tests
     }
 
     [Test]
-    public void TInsertWordOk()
+    public void T_InsertWord_Ok()
     {
         Trie trie = InitializeTestingTrie();
         string word = "Ca";
@@ -279,7 +279,7 @@ public class Tests
     }
 
     [Test]
-    public void T_IncreasePopularityWordExists()
+    public void T_IncreasePopularity_WordExists()
     {
         string fileContent = "{\"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
         Trie trie = new Trie(10);
@@ -292,7 +292,7 @@ public class Tests
     }
 
     [Test]
-    public void T_IncreasePopularityWordDoesNotExist()
+    public void T_IncreasePopularity_WordDoesNotExist()
     {
         string fileContent = "{\"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
         Trie trie = new Trie(10);
@@ -300,4 +300,177 @@ public class Tests
 
         Assert.Throws<Exception>(() => trie.IncreasePopularity("Abcd"), "Word does not exist");
     }
+
+    [Test]
+    public void T_GetTypeaheadWords_PrefixNotIncluded()
+    {
+        Trie trie = InitializeTestingTrie();
+        List<WordData> words = trie.GetTypeaheadWords("Ab").ToList();
+
+        List<WordData> expectedWords = new List<WordData>() {
+            new WordData("Abag", 704),
+            new WordData("Aba", 608),
+            new WordData("Abe", 300)
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_ExactMatchPrefix()
+    {
+        Trie trie = InitializeTestingTrie();
+
+        List<WordData> words = trie.GetTypeaheadWords("Aba").ToList();
+
+        List<WordData> expectedWords = new List<WordData>() {
+            new WordData("Aba", 608),
+            new WordData("Abag", 704)
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_MoreWordsThanSuggestionNumber()
+    {
+        var trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 2;
+        var words = trie.GetTypeaheadWords("Ab").ToList();
+
+        var expectedWords = new List<WordData> {
+            new WordData("Abag", 704),
+            new WordData("Aba", 608)
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_LessWordsThanSuggestionNumber()
+    {
+        var trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 10;
+        var words = trie.GetTypeaheadWords("Ab").ToList();
+
+        var expectedWords = new List<WordData> {
+            new WordData("Abag", 704),
+            new WordData("Aba", 608),
+            new WordData("Abe", 300)
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_EmptyPrefix()
+    {
+        Trie trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 3;
+        var words = trie.GetTypeaheadWords("");
+        var expectedWords = new List<WordData>
+        {
+            new WordData("Abag", 704),
+            new WordData("Aba", 608),
+            new WordData("Aar", 361)
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_SamePopularityWords()
+    {
+        Trie trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 2;
+        var words = trie.GetTypeaheadWords("B");
+
+        var expectedWords = new List<WordData>
+        {
+            new WordData("Bc", 50),
+            new WordData("Be", 50)
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_CaseInsensitive()
+    {
+        var trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 2;
+        var words = trie.GetTypeaheadWords("b");
+        var expectedWords = new List<WordData>
+        {
+            new WordData("Bc", 50),
+            new WordData("Be", 50),
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+
+        words = trie.GetTypeaheadWords("AA");
+        expectedWords = new List<WordData>
+        {
+            new WordData("Aar", 361),
+            new WordData("Aari", 151),
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_TestingOrdering()
+    {
+        var trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 4;
+        var words = trie.GetTypeaheadWords("b");
+        var expectedWords = new List<WordData>
+        {
+            new WordData("Bc", 50),
+            new WordData("Be", 50),
+            new WordData("Ba", 5),
+            new WordData("Bah", 5),
+        };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_NoWordMatchesPrefix()
+    {
+        var trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 4;
+        var words = trie.GetTypeaheadWords("Brazil");
+        var expectedWords = new List<WordData>();
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_ReturnOnlyPrefix()
+    {
+        var trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 4;
+        var words = trie.GetTypeaheadWords("Bah");
+
+        var expectedWords = new List<WordData> { new WordData("Bah", 5) };
+
+        CollectionAssert.AreEqual(expectedWords, words);
+    }
+
+    [Test]
+    public void T_GetTypeaheadWords_PrefixWithSpecialCharacters()
+    {
+        Trie trie = InitializeTestingTrie();
+        trie.SuggestionNumber = 4;
+        var words = trie.GetTypeaheadWords("A-".ToString());
+        List<WordData> expected_words = new List<WordData>
+        {
+            new WordData("A-b", 23)
+        };
+
+        CollectionAssert.AreEqual(expected_words, words);
+    }
+
+
 }

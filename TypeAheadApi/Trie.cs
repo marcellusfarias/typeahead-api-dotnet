@@ -122,9 +122,7 @@ namespace TrieNamespace
                 wordsWithSamePrefix.Insert(0, prefixWordData.Clone());
 
             //return only SUGGESTION_NUMBER items
-            wordsWithSamePrefix.RemoveRange(this.SuggestionNumber, wordsWithSamePrefix.Count - this.SuggestionNumber);
-
-            return wordsWithSamePrefix;
+            return wordsWithSamePrefix.Take(this.SuggestionNumber).ToList();
         }
 
         private void GetWordsWithSamePrefix(TrieNode prefixNode, List<WordData> resultVec)
@@ -185,7 +183,6 @@ namespace TrieNamespace
 
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CS8602: Desreferência de uma referência possivelmente nula", Justification = "Not going to fail.")]
         public static bool operator !=(WordData? wd1, WordData? wd2)
         {
             if (wd1 is null && wd2 is not null)
@@ -196,6 +193,16 @@ namespace TrieNamespace
                 return false;
             else
                 return !(wd1!.Word == wd2!.Word) || !wd1.Popularity.Equals(wd2.Popularity);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            var other = obj as WordData;
+
+            if (other == null)
+                return false;
+
+            return this.Word == other.Word && this.Popularity == other.Popularity;
         }
     }
 }
