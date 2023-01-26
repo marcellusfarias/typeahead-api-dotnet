@@ -5,16 +5,14 @@ using log4net;
 
 public class Program
 {
-    private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
     static void Main(string[] args)
     {
         FileInfo fileInfo = new FileInfo("./log4net.config");
         log4net.Config.XmlConfigurator.Configure(fileInfo);
+        log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()!.DeclaringType);
 
         log.Info("Starting service...");
         Console.WriteLine("Hello World");
-        // Console.ReadLine();
 
         //[TODO] Read configurations...
         string host = string.Empty;

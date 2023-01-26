@@ -1,4 +1,5 @@
 using TrieNamespace;
+using System.Text.Json;
 
 namespace TypeAheadApi.Tests;
 
@@ -74,7 +75,11 @@ public class Tests
 
     private void PrintTrie(TrieNode node, int i)
     {
-        Console.WriteLine("[{0}] {1}-{2}", i, node.Letter, node.WordData);
+        if (node.WordData == null)
+            Console.WriteLine("[{0}] {1}", i, node.Letter);
+        else
+            Console.WriteLine("[{0}] {1}-{2},{3}", i, node.Letter, node.WordData.Word, node.WordData.Popularity);
+
         i = i + 1;
         foreach (var child in node.Children)
         {
@@ -100,17 +105,17 @@ public class Tests
 
         if (nodeA.Letter != nodeB.Letter || nodeA.WordData != nodeB.WordData)
         {
-            Console.WriteLine("nodeA: {0}, nodeB: {1}", nodeA, nodeB);
+            Console.WriteLine("nodeA: {0}, nodeB: {1}", JsonSerializer.Serialize(nodeA), JsonSerializer.Serialize(nodeB));
             return false;
         }
 
         foreach (var childA in nodeA.Children)
         {
-            var childB = nodeB.Children.GetValueOrDefault(childA.Key);
+            var childB = nodeB.Children[childA.Key];
 
             if (childB == null || returnValue == false)
             {
-                Console.WriteLine("childA: {0}, childB: {1}", childA, childB);
+                Console.WriteLine("childA: {0}, childB: {1}", JsonSerializer.Serialize(childA), JsonSerializer.Serialize(childB));
                 return false;
             }
             else
@@ -132,7 +137,10 @@ public class Tests
 
         var expectedTrie = InitializeTestingTrie();
 
+        Console.WriteLine("Printing expected trie");
         PrintTrie(expectedTrie.Root, 0);
+
+        Console.WriteLine("Printing trie");
         PrintTrie(trie.Root, 0);
 
         Assert.IsTrue(CompareTries(trie.Root, expectedTrie.Root));
