@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Xml.Serialization;
 using log4net;
+
 public class Program
 {
     private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -29,6 +31,5 @@ public class Program
             log.Error("Could not load configuration environment!");
             return;
         }
-
     }
 }
