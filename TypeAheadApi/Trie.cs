@@ -5,7 +5,6 @@ namespace TrieNamespace
     public class Trie
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()!.DeclaringType);
-
         public TrieNode Root;
         public int SuggestionNumber;
 
@@ -31,22 +30,19 @@ namespace TrieNamespace
 
                 return;
             }
-            catch (Exception ex)
+            catch (JsonException)
             {
-                if (ex is ArgumentNullException || ex is JsonException || ex is NotSupportedException)
-                {
-                    log.Error("Invalid file.");
-                    return;
-                }
-                else
-                {
-                    log.Error("Unexpected error.");
-                    return;
-                }
+                log.Error("Invalid file.");
+                throw;
+            }
+            catch (Exception)
+            {
+                log.Error("Unexpected error.");
+                throw;
             }
         }
 
-        internal void InsertWord(string word, int popularity)
+        public void InsertWord(string word, int popularity)
         {
             TrieNode node = this.Root;
             string lowercase_word = word.ToLower();
@@ -64,7 +60,7 @@ namespace TrieNamespace
             return;
         }
 
-        internal WordData IncreasePopularity(string word)
+        public WordData IncreasePopularity(string word)
         {
             TrieNode node = this.Root;
             string lowercase_word = word.ToLower();
