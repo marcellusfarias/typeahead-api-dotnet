@@ -4,10 +4,11 @@ namespace TrieNamespace
 {
     public class Trie
     {
+        // check which Logger to use
+        // private readonly ILogger<Trie> _logger;
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()!.DeclaringType);
         public TrieNode Root;
         public int SuggestionNumber;
-
         public Trie(int suggestionNumber)
         {
             this.Root = new TrieNode(' ', null);

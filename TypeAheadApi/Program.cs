@@ -1,33 +1,25 @@
-﻿using System;
-using System.IO;
-using System.Xml.Serialization;
-using log4net;
+var builder = WebApplication.CreateBuilder(args);
 
-public class Program
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
 {
-    static void Main(string[] args)
-    {
-        FileInfo fileInfo = new FileInfo("./log4net.config");
-        log4net.Config.XmlConfigurator.Configure(fileInfo);
-        log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()!.DeclaringType);
-
-        log.Info("Starting service...");
-        Console.WriteLine("Hello World");
-
-        //[TODO] Read configurations...
-        string host = string.Empty;
-        string fileName = string.Empty;
-        string port = string.Empty;
-        int suggestionNumber = 0;
-
-        try
-        {
-            string fileContent = File.ReadAllText(fileName);
-        }
-        catch (Exception)
-        {
-            log.Error("Could not load configuration environment!");
-            return;
-        }
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
