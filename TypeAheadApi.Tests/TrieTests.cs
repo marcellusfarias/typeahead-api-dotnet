@@ -1,4 +1,4 @@
-using TrieNamespace;
+using TypeAheadApi.Data;
 using System.Text.Json;
 
 namespace TypeAheadApi.Tests;

@@ -1,3 +1,6 @@
+﻿using TypeAheadApi.Data.Interfaces;
+using TypeAheadApi.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<ITrie>(trie => new Trie(10));
 
 var app = builder.Build();
 

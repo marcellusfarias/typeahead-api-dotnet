@@ -1,8 +1,9 @@
 using System.Text.Json;
+using TypeAheadApi.Data.Interfaces;
 
-namespace TrieNamespace
+namespace TypeAheadApi.Data
 {
-    public class Trie
+    public class Trie : ITrie
     {
         // check which Logger to use
         // private readonly ILogger<Trie> _logger;
@@ -140,7 +141,7 @@ namespace TrieNamespace
         }
     }
 
-    public class TrieNode
+    public struct TrieNode
     {
         public Dictionary<char, TrieNode> Children;
         public char Letter;
