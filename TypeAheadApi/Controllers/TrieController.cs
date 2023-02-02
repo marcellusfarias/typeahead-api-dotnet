@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TypeAheadApi.Data.Interfaces;
 using TypeAheadApi.Data;
+using System.Text.Json;
 
 namespace TypeAheadApi.Controllers;
 
@@ -29,26 +30,29 @@ public class TypeAheadController : ControllerBase
     [HttpGet("{prefix}")]
     public ActionResult<IEnumerable<WordData>> GetWordsMatchPrefix(string prefix)
     {
-        _logger.LogInformation($"prefix: {prefix}");
+        _logger.LogInformation($"[GetWordsMatchPrefix] prefix: {prefix}");
 
         _lock.EnterReadLock();
 
-        var result = _sharedTrie.GetTypeaheadWords(prefix);
+        var listWordsMatchPrefix = _sharedTrie.GetTypeaheadWords(prefix);
 
         _lock.ExitReadLock();
 
-        return Ok(result);
+        return listWordsMatchPrefix;
     }
 
     public struct IncreasePopularityPayload
     {
-        public string Name;
+        public string Name { get; set; }
     }
 
     [HttpPost]
     public ActionResult<JsonContent> IncreasePopularity(IncreasePopularityPayload payload)
     {
-        _logger.LogInformation($"payload: {payload}");
+        _logger.LogInformation($"payload: {payload.Name}");
+
+        if (payload.Name is null)
+            return BadRequest();
 
         _lock.EnterWriteLock();
 

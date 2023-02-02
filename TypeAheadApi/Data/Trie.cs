@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Text.Json;
 using TypeAheadApi.Data.Interfaces;
 
@@ -5,94 +6,79 @@ namespace TypeAheadApi.Data
 {
     public class Trie : ITrie
     {
-        // check which Logger to use
-        // private readonly ILogger<Trie> _logger;
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()!.DeclaringType);
-        public TrieNode Root;
-        public int SuggestionNumber;
-        public Trie(int suggestionNumber)
+        public TrieNode Root => _root; //for testing purposes
+        private TrieNode _root;
+        private readonly int _suggestionNumber;
+        private readonly ILogger<Trie> _logger;
+        public Trie(int suggestionNumber, ILogger<Trie> log)
         {
-            this.Root = new TrieNode(' ', null);
-            this.SuggestionNumber = suggestionNumber;
-        }
-
-        public void Initialize(string fileContent)
-        {
-            try
-            {
-                Dictionary<string, int>? values = JsonSerializer.Deserialize<Dictionary<string, int>>(fileContent);
-
-                if (values == null)
-                    throw new ArgumentNullException("Invalid file");
-
-                foreach (var (word, popularity) in values)
-                {
-                    this.InsertWord(word, popularity);
-                }
-
-                return;
-            }
-            catch (JsonException)
-            {
-                log.Error("Invalid file.");
-                throw;
-            }
-            catch (Exception)
-            {
-                log.Error("Unexpected error.");
-                throw;
-            }
+            _root = new TrieNode(' ', null);
+            _suggestionNumber = suggestionNumber;
+            _logger = log;
         }
 
         public void InsertWord(string word, int popularity)
         {
-            TrieNode node = this.Root;
+            TrieNode node = _root;
             string lowercase_word = word.ToLower();
 
-            foreach (char letter in lowercase_word)
+            // i have no idea why this code suddenly stopped working
+            // foreach (char letter in lowercase_word)
+            // {
+            //     if (!node.Children.ContainsKey(letter))
+            //         node.Children.Add(letter, new TrieNode(letter, null));
+
+            //     node = node.Children[letter];
+            // }
+
+            // var newWordData = node.WordData;
+            // newWordData = new WordData(word, popularity);
+            // node.WordData = newWordData;//new WordData(word, popularity);
+
+            for (int i = 0; i < lowercase_word.Length; i++)
             {
+                var letter = lowercase_word[i];
+
                 if (!node.Children.ContainsKey(letter))
-                    node.Children.Add(letter, new TrieNode(letter, null));
+                {
+                    if (i == lowercase_word.Length - 1)
+                        node.Children.Add(letter, new TrieNode(letter, new WordData(word, popularity)));
+                    else
+                        node.Children.Add(letter, new TrieNode(letter, null));
+                }
 
                 node = node.Children[letter];
             }
 
-            node.WordData = new WordData(word, popularity);
 
             return;
         }
 
         public WordData IncreasePopularity(string word)
         {
-            TrieNode node = this.Root;
+            TrieNode node = _root;
             string lowercase_word = word.ToLower();
 
             foreach (char letter in lowercase_word)
             {
                 if (!node.Children.ContainsKey(letter))
                 {
-                    log.Error($"Word '{word}' does not exist.");
+                    _logger.LogError($"Word '{word}' does not exist.");
                     throw new Exception("Word does not exist"); // create our own exception here
                 }
 
                 node = node.Children[letter];
             }
 
-            if (node.WordData == null)
-            {
-                log.Error($"Word '{word}' does not exist.");
-                throw new Exception("Word does not exist.");
-            }
+            node.IncreasePopularity();
 
-            WordData updatedWordData = new WordData(node.WordData.Word, node.WordData.Popularity + 1);
-            node.WordData = updatedWordData;
 
-            return node.WordData;
+            return node.WordData!;
         }
 
         public List<WordData> GetTypeaheadWords(string prefix)
         {
-            var node = this.Root;
+            var node = _root;
             prefix = prefix.ToLower();
 
             foreach (char c in prefix)
@@ -103,10 +89,14 @@ namespace TypeAheadApi.Data
                     return new List<WordData>();
             }
 
+            _logger.LogInformation($"[1] node: {node.Letter}, {(node.WordData is null ? "" : node.WordData.Word)}");
+
             var wordsWithSamePrefix = new List<WordData>();
             var prefixWordData = node.WordData != null ? node.WordData.Clone() : null;
 
             this.GetWordsWithSamePrefix(node, wordsWithSamePrefix);
+
+            _logger.LogInformation($"[2] wordsWithSamePrefi: {wordsWithSamePrefix.Count}");
 
             //order by popularity desc and then by word asc
             wordsWithSamePrefix.Sort((wordData1, wordData2) =>
@@ -124,7 +114,7 @@ namespace TypeAheadApi.Data
                 wordsWithSamePrefix.Insert(0, prefixWordData.Clone());
 
             //return only SUGGESTION_NUMBER items
-            return wordsWithSamePrefix.Take(this.SuggestionNumber).ToList();
+            return wordsWithSamePrefix.Take(_suggestionNumber).ToList();
         }
 
         private void GetWordsWithSamePrefix(TrieNode prefixNode, List<WordData> resultVec)
@@ -153,12 +143,22 @@ namespace TypeAheadApi.Data
             this.Letter = letter;
             this.WordData = wordData;
         }
+
+        public void IncreasePopularity()
+        {
+            if (this.WordData == null)
+            {
+                throw new Exception("Word does not exist.");
+            }
+            this.WordData.Popularity += 1;
+        }
     }
 
+    // [Serializable]
     public class WordData
     {
-        public string Word;
-        public int Popularity;
+        public string Word { get; set; }
+        public int Popularity { get; set; }
 
         public WordData(string word, int popularity)
         {
@@ -205,6 +205,11 @@ namespace TypeAheadApi.Data
                 return false;
 
             return this.Word == other.Word && this.Popularity == other.Popularity;
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            throw new NotImplementedException();
         }
     }
 }

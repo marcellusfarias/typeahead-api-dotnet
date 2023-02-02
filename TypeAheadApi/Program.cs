@@ -9,7 +9,11 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<ITrie>(trie => new Trie(10));
+builder.Services.AddSingleton<ITrie>(trie =>
+{
+    var trieFactory = new TrieFactory(10, trie.GetService<ILogger<TrieFactory>>()!, trie.GetService<ILogger<Trie>>()!);
+    return trieFactory.Initialize(File.ReadAllText("./names.json"));
+});
 
 var app = builder.Build();
 

@@ -1,5 +1,8 @@
 using TypeAheadApi.Data;
 using System.Text.Json;
+using TypeAheadApi.Data.Interfaces;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace TypeAheadApi.Tests;
 
@@ -7,11 +10,14 @@ namespace TypeAheadApi.Tests;
 public class Tests
 {
     #region Testing Tries
-    private Trie InitializeTestingTrie()
+
+    private Trie InitializeTestingTrie(int suggestionNumber = 10)
     {
-        var expectedTrie = new Trie(10);
+        var expectedTrie = new Trie(suggestionNumber, GetLogger());
 
         TrieNode node = expectedTrie.Root;
+
+        #region Setting root
 
         // (A) first level
         node.Children.Add('a', new TrieNode('a', null));
@@ -66,11 +72,13 @@ public class Tests
         node = node.Children['a'];
         node.Children.Add('h', new TrieNode('h', new WordData("Bah", 5)));
 
+        #endregion
+
         return expectedTrie;
     }
     private Trie InsertWordTestingTrie()
     {
-        var expectedTrie = new Trie(10);
+        var expectedTrie = new Trie(10, this.GetLogger());
         TrieNode node = expectedTrie.Root;
         // (A) first level
         node.Children.Add('a', new TrieNode('a', null));
@@ -131,7 +139,7 @@ public class Tests
     }
     private Trie IncreasePopularityTestingTrie()
     {
-        Trie expectedTrie = new Trie(10);
+        Trie expectedTrie = new Trie(10, this.GetLogger());
         TrieNode node = expectedTrie.Root;
         // (A) first level
         node.Children.Add('a', new TrieNode('a', null));
@@ -179,6 +187,18 @@ public class Tests
     }
     #endregion
 
+    #region Helpful methods
+    private ILogger<Trie> GetLogger()
+    {
+        var mock = new Mock<ILogger<Trie>>();
+        return mock.Object;
+    }
+    private ILogger<TrieFactory> GetLoggerFactory()
+    {
+        var mock = new Mock<ILogger<TrieFactory>>();
+        return mock.Object;
+    }
+
     private void PrintTrie(TrieNode node, int i)
     {
         if (node.WordData == null)
@@ -198,6 +218,9 @@ public class Tests
         Console.WriteLine("Comparing b to a");
         var isBEqualA = RecursivelyCompareTries(rootA, rootB);
 
+        if (!isBEqualA)
+            return false;
+
         Console.WriteLine("Comparing a to b");
         var isAEqualB = RecursivelyCompareTries(rootB, rootA);
 
@@ -215,36 +238,36 @@ public class Tests
 
         foreach (var childA in nodeA.Children)
         {
-            var childB = nodeB.Children[childA.Key];
+            // var childB = nodeB.Children[childA.Key];
+            var doesNodeBContainsChildAKey = nodeB.Children.ContainsKey(childA.Key);
 
-            if (childB == null || returnValue == false)
+            if (doesNodeBContainsChildAKey == false || returnValue == false)
             {
-                Console.WriteLine("childA: {0}, childB: {1}", JsonSerializer.Serialize(childA), JsonSerializer.Serialize(childB));
+                Console.WriteLine("No child element on Tree B for node: {0}", JsonSerializer.Serialize(childA));
                 return false;
             }
             else
             {
-                returnValue = RecursivelyCompareTries(childA.Value, childB);
+                returnValue = RecursivelyCompareTries(childA.Value, nodeB.Children[childA.Key]);
             }
         }
 
         return returnValue;
     }
 
+    #endregion
+
     [Test]
     public void T_Initialize_ValidFileContent()
     {
         string fileContent = "{\"A-b\": 23, \"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
-        Trie trie = new Trie(10);
-        trie.Initialize(fileContent);
-
-        var expectedTrie = InitializeTestingTrie();
-
-        Console.WriteLine("Printing expected trie");
-        PrintTrie(expectedTrie.Root, 0);
-
+        ITrie trie = new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent);
         Console.WriteLine("Printing trie");
         PrintTrie(trie.Root, 0);
+
+        var expectedTrie = InitializeTestingTrie();
+        Console.WriteLine("Printing expected trie");
+        PrintTrie(expectedTrie.Root, 0);
 
         Assert.IsTrue(CompareTries(trie.Root, expectedTrie.Root));
     }
@@ -253,27 +276,25 @@ public class Tests
     public void T_Initialize_InvalidFileContent()
     {
         string fileContent = string.Empty;
-        Trie trie = new Trie(10);
 
-        Assert.Throws<JsonException>(() => trie.Initialize(fileContent));
+        Assert.Throws<JsonException>(() => new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent));
     }
 
     [Test]
     public void T_InsertWord_Ok()
     {
         Trie trie = InitializeTestingTrie();
+
         string word = "Ca";
         int popularity = 150;
 
         trie.InsertWord(word, popularity);
-
-        var expectedTrie = InsertWordTestingTrie();
-
-        Console.WriteLine("Printing expected trie");
-        PrintTrie(expectedTrie.Root, 0);
-
         Console.WriteLine("Printing trie");
         PrintTrie(trie.Root, 0);
+
+        var expectedTrie = InsertWordTestingTrie();
+        Console.WriteLine("Printing expected trie");
+        PrintTrie(expectedTrie.Root, 0);
 
         Assert.IsTrue(CompareTries(trie.Root, expectedTrie.Root));
     }
@@ -282,11 +303,14 @@ public class Tests
     public void T_IncreasePopularity_WordExists()
     {
         string fileContent = "{\"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
-        Trie trie = new Trie(10);
-        trie.Initialize(fileContent);
+        ITrie trie = new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent);
         trie.IncreasePopularity("Abe");
+        Console.WriteLine("Printing trie");
+        PrintTrie(trie.Root, 0);
 
         Trie expectedTrie = IncreasePopularityTestingTrie();
+        Console.WriteLine("Printing expected trie");
+        PrintTrie(expectedTrie.Root, 0);
 
         Assert.IsTrue(CompareTries(trie.Root, expectedTrie.Root));
     }
@@ -295,11 +319,11 @@ public class Tests
     public void T_IncreasePopularity_WordDoesNotExist()
     {
         string fileContent = "{\"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
-        Trie trie = new Trie(10);
-        trie.Initialize(fileContent);
+        ITrie trie = new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent);
 
         Assert.Throws<Exception>(() => trie.IncreasePopularity("Abcd"), "Word does not exist");
     }
+
 
     [Test]
     public void T_GetTypeaheadWords_PrefixNotIncluded()
@@ -334,8 +358,8 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_MoreWordsThanSuggestionNumber()
     {
-        var trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 2;
+        var trie = InitializeTestingTrie(2);
+
         var words = trie.GetTypeaheadWords("Ab").ToList();
 
         var expectedWords = new List<WordData> {
@@ -350,7 +374,6 @@ public class Tests
     public void T_GetTypeaheadWords_LessWordsThanSuggestionNumber()
     {
         var trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 10;
         var words = trie.GetTypeaheadWords("Ab").ToList();
 
         var expectedWords = new List<WordData> {
@@ -365,8 +388,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_EmptyPrefix()
     {
-        Trie trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 3;
+        Trie trie = InitializeTestingTrie(3);
         var words = trie.GetTypeaheadWords("");
         var expectedWords = new List<WordData>
         {
@@ -381,8 +403,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_SamePopularityWords()
     {
-        Trie trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 2;
+        Trie trie = InitializeTestingTrie(2);
         var words = trie.GetTypeaheadWords("B");
 
         var expectedWords = new List<WordData>
@@ -397,8 +418,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_CaseInsensitive()
     {
-        var trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 2;
+        var trie = InitializeTestingTrie(2);
         var words = trie.GetTypeaheadWords("b");
         var expectedWords = new List<WordData>
         {
@@ -421,8 +441,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_TestingOrdering()
     {
-        var trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 4;
+        var trie = InitializeTestingTrie(4);
         var words = trie.GetTypeaheadWords("b");
         var expectedWords = new List<WordData>
         {
@@ -438,8 +457,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_NoWordMatchesPrefix()
     {
-        var trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 4;
+        var trie = InitializeTestingTrie(4);
         var words = trie.GetTypeaheadWords("Brazil");
         var expectedWords = new List<WordData>();
 
@@ -449,8 +467,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_ReturnOnlyPrefix()
     {
-        var trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 4;
+        var trie = InitializeTestingTrie(4);
         var words = trie.GetTypeaheadWords("Bah");
 
         var expectedWords = new List<WordData> { new WordData("Bah", 5) };
@@ -461,8 +478,7 @@ public class Tests
     [Test]
     public void T_GetTypeaheadWords_PrefixWithSpecialCharacters()
     {
-        Trie trie = InitializeTestingTrie();
-        trie.SuggestionNumber = 4;
+        Trie trie = InitializeTestingTrie(4);
         var words = trie.GetTypeaheadWords("A-".ToString());
         List<WordData> expected_words = new List<WordData>
         {
