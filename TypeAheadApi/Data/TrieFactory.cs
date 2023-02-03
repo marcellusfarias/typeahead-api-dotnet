@@ -1,5 +1,6 @@
 using System.Text.Json;
 using TypeAheadApi.Data.Interfaces;
+using TypeAheadApi.Utils.Exceptions;
 
 namespace TypeAheadApi.Data
 {
@@ -35,7 +36,7 @@ namespace TypeAheadApi.Data
             catch (JsonException)
             {
                 _logger.LogError("Invalid file.");
-                throw;
+                throw new InvalidFileException();
             }
             catch (Exception)
             {

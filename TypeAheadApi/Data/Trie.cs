@@ -1,6 +1,7 @@
 using System.Runtime.Serialization;
 using System.Text.Json;
 using TypeAheadApi.Data.Interfaces;
+using TypeAheadApi.Utils.Exceptions;
 
 namespace TypeAheadApi.Data
 {
@@ -64,14 +65,16 @@ namespace TypeAheadApi.Data
                 if (!node.Children.ContainsKey(letter))
                 {
                     _logger.LogError($"Word '{word}' does not exist.");
-                    throw new Exception("Word does not exist"); // create our own exception here
+                    throw new WordDoesNotExistException(word);
                 }
 
                 node = node.Children[letter];
             }
 
-            node.IncreasePopularity();
+            if (node.WordData == null)
+                throw new WordDoesNotExistException(word);
 
+            node.IncreasePopularity();
 
             return node.WordData!;
         }
@@ -146,11 +149,7 @@ namespace TypeAheadApi.Data
 
         public void IncreasePopularity()
         {
-            if (this.WordData == null)
-            {
-                throw new Exception("Word does not exist.");
-            }
-            this.WordData.Popularity += 1;
+            this.WordData!.Popularity += 1;
         }
     }
 

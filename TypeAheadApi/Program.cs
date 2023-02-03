@@ -1,5 +1,6 @@
 ﻿using TypeAheadApi.Data.Interfaces;
 using TypeAheadApi.Data;
+using TypeAheadApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseExceptionHandler(error => error.UseCustomErrors(app.Services.GetRequiredService<ILoggerFactory>()));
 
 app.UseHttpsRedirection();
 

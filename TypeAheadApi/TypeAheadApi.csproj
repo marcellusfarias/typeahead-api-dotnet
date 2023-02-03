@@ -13,4 +13,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TypeAheadApi.Utils\TypeAheadApi.Utils.csproj" />
+  </ItemGroup>
 </Project>

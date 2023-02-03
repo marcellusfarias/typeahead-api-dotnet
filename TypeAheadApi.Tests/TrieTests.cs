@@ -3,6 +3,7 @@ using System.Text.Json;
 using TypeAheadApi.Data.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
+using TypeAheadApi.Utils.Exceptions;
 
 namespace TypeAheadApi.Tests;
 
@@ -277,7 +278,7 @@ public class Tests
     {
         string fileContent = string.Empty;
 
-        Assert.Throws<JsonException>(() => new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent));
+        Assert.Throws<InvalidFileException>(() => new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent));
     }
 
     [Test]
@@ -321,7 +322,7 @@ public class Tests
         string fileContent = "{\"Aar\":361,\"Aari\":151,\"Aba\":608,\"Abag\":704, \"Abe\": 300, \"Ba\": 5, \"Bah\": 5, \"Be\": 50, \"Bc\": 50}";
         ITrie trie = new TrieFactory(10, GetLoggerFactory(), GetLogger()).Initialize(fileContent);
 
-        Assert.Throws<Exception>(() => trie.IncreasePopularity("Abcd"), "Word does not exist");
+        Assert.Throws<WordDoesNotExistException>(() => trie.IncreasePopularity("Abcd"), "Word Abcd does not exist");
     }
 
 

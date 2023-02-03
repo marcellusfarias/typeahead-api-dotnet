@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TypeAheadApi.Data.Interfaces;
 using TypeAheadApi.Data;
 using System.Text.Json;
+using TypeAheadApi.Utils.Validations;
 
 namespace TypeAheadApi.Controllers;
 
@@ -10,9 +11,7 @@ namespace TypeAheadApi.Controllers;
 public class TypeAheadController : ControllerBase
 {
     private readonly ILogger<TypeAheadController> _logger;
-    // private readonly Mutex _mutex = new Mutex();
     private ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-
     private ITrie _sharedTrie;
 
     public TypeAheadController(ILogger<TypeAheadController> logger, ITrie trie)
@@ -51,8 +50,7 @@ public class TypeAheadController : ControllerBase
     {
         _logger.LogInformation($"payload: {payload.Name}");
 
-        if (payload.Name is null)
-            return BadRequest();
+        Validate.That(payload.Name).IsNotNullOrWhiteSpace();
 
         _lock.EnterWriteLock();
 
