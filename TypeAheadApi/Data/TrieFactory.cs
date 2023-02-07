@@ -19,6 +19,8 @@ namespace TypeAheadApi.Data
         {
             try
             {
+                _logger.LogInformation($"Initializing trie with suggestion number: {_suggestionNumber}");
+
                 Trie trie = new Trie(_suggestionNumber, _loggerTrie);
 
                 Dictionary<string, int>? values = JsonSerializer.Deserialize<Dictionary<string, int>>(fileContent);

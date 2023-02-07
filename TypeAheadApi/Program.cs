@@ -12,7 +12,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ITrie>(trie =>
 {
-    var trieFactory = new TrieFactory(10, trie.GetService<ILogger<TrieFactory>>()!, trie.GetService<ILogger<Trie>>()!);
+    string suggestionNumber = Environment.GetEnvironmentVariable("SUGGESTION_NUMBER")!;
+    TrieFactory trieFactory = new TrieFactory(Convert.ToInt32(suggestionNumber), trie.GetService<ILogger<TrieFactory>>()!, trie.GetService<ILogger<Trie>>()!);
     return trieFactory.Initialize(File.ReadAllText("./names.json"));
 });
 

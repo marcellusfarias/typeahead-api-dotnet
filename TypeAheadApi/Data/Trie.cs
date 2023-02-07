@@ -165,7 +165,6 @@ namespace TypeAheadApi.Data
             this.Popularity = popularity;
         }
 
-        //deep copy
         public WordData Clone()
         {
             return new WordData(this.Word, this.Popularity);
